@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+bool WIREFRAME{false};
+
 // GLSL vertex shaders
 const char *vertexShaderSource{"#version 330 core\n"
                                "layout (location = 0) in vec3 aPos;\n"
@@ -18,7 +20,7 @@ const char *fragmentShaderSource{"#version 330 core\n"
                                  "FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
                                  "}\n"};
 
-void shader_compile_success(unsigned int *shader) {
+void shader_compile_success(const unsigned int *shader) {
     int success;
     char infoLog[512];
     glGetShaderiv(*shader, GL_COMPILE_STATUS, &success);
@@ -29,7 +31,7 @@ void shader_compile_success(unsigned int *shader) {
     }
 }
 
-void shader_link_success(unsigned int *shaderProgram) {
+void shader_link_success(const unsigned int *shaderProgram) {
     int success;
     char infoLog[512];
 
@@ -46,21 +48,21 @@ unsigned int get_shader_program() {
     // source code. The first thing we need to do is create a shader object, again referenced by an
     // ID. GL_VERTEX_SHADER specifies we want to create a... vertex shader
     unsigned int vertexShader{glCreateShader(GL_VERTEX_SHADER)};
-    // Attach shader souce to shader object. We're only passing 1 GLSL string
+    // Attach shader source to shader object. We're only passing 1 GLSL string
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
 
     shader_compile_success(&vertexShader);
 
     // Fragment shader to colour the triangle
-    unsigned int fragmentShader{glCreateShader(GL_FRAGMENT_SHADER)};
+    const unsigned int fragmentShader{glCreateShader(GL_FRAGMENT_SHADER)};
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
 
     shader_compile_success(&fragmentShader);
 
     // Add our shaders to the program and link them
-    unsigned int shaderProgram{glCreateProgram()};
+    const unsigned int shaderProgram{glCreateProgram()};
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
@@ -74,10 +76,10 @@ unsigned int get_shader_program() {
     return shaderProgram;
 }
 
-unsigned int get_vertex_array() {
+unsigned int get_triangle_vertex_array() {
     // Setup vertex data and attributes
     // --------------------------------
-    float vertices[]{0.0f, 0.5f, 0.0f, 0.5f, -0.5f, 0.0f, -0.5f, -0.5f, 0.0f};
+    const float vertices[]{0.0f, 0.5f, 0.0f, 0.5f, -0.5f, 0.0f, -0.5f, -0.5f, 0.0f};
 
     // Generate (v)ertex (b)uffer (o)bject and (v)ertex (a)rray (o)bject IDs
     unsigned int VBO, VAO;
@@ -117,7 +119,52 @@ unsigned int get_vertex_array() {
     return VAO;
 }
 
-void draw_triangle() {}
+unsigned int get_rectangle_vertex_array() {
+    // float vertices[]{
+    //     // first triangle
+    //     0.5f, 0.5f, 0.0f,  // top right
+    //     0.5f, -0.5f, 0.0f, // bottom right
+    //     -0.5f, 0.5f, 0.0f, // top left
+    //     // second triangle
+    //     0.5f, -0.5f, 0.0f,  // bottom right
+    //     -0.5f, -0.5f, 0.0f, // bottom left
+    //     -0.5f, 0.5f, 0.0f   // top left
+    // };
+
+    // We can use an (E)lement (B)uffer (O)bject to store only the unique vertices instead, and
+    // specify the order with indices
+    float vertices[] = {
+        0.5f,  0.5f,  0.0f, // top right
+        0.5f,  -0.5f, 0.0f, // bottom right
+        -0.5f, -0.5f, 0.0f, // bottom left
+        -0.5f, 0.5f,  0.0f  // top left
+    };
+    unsigned int indices[] = {
+        // note that we start from 0!
+        0, 1, 3, // first triangle
+        1, 2, 3  // second triangle
+    };
+
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    unsigned int EBO;
+    glGenBuffers(1, &EBO);
+    // The target is GL_ELEMENT_ARRAY_BUFFER instead of GL_ARRAY_BUFFER
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+
+    return VAO;
+}
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
     // Called by GLFW whenever the window is manually resized
@@ -128,6 +175,15 @@ void processInput(GLFWwindow *window) {
     // Checks for esc key press, closes window if pressed
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+}
+
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_W && action == GLFW_PRESS) {
+        WIREFRAME = !WIREFRAME;
+
+        WIREFRAME ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+                  : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
 }
 
 int main() {
@@ -152,6 +208,8 @@ int main() {
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+    glfwSetKeyCallback(window, key_callback);
+
     // Load GLFW function pointers
     // ---------------------------
     // GLAD manages function pointers for OpenGL. Initalise this before calling any OpenGl function
@@ -163,7 +221,8 @@ int main() {
     }
 
     unsigned int shaderProgram = get_shader_program();
-    unsigned int VAO = get_vertex_array();
+    // unsigned int VAO = get_triangle_vertex_array();
+    unsigned int VAO = get_rectangle_vertex_array();
 
     // Render loop
     while (!glfwWindowShouldClose(window)) {
@@ -176,7 +235,12 @@ int main() {
         glBindVertexArray(VAO);
         // 0 = Starting index of vertex array
         // 3 = How many vertices we want to draw. We only want to draw 1 triangle with 3 vertices
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        // Use draw elements when an EBO is involved i.e. for a rectangle
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        glBindVertexArray(0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
