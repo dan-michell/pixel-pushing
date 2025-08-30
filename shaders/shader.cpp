@@ -1,9 +1,92 @@
 #include "shader.h"
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
-void Shader::shaderCompileSuccess(const unsigned int &shader,
-                                  std::string &type) {
+Shader::Shader(const char *vertexPath, const char *fragmentPath) {
+    std::string vertexCode{Shader::fileToString(vertexPath)};
+    std::string fragmentCode{Shader::fileToString(fragmentPath)};
+
+    Shader::setVertexShader(vertexCode);
+    Shader::setFragmentShader(fragmentCode);
+
+    Shader::setShaderProgram();
+
+    glDeleteShader(Shader::vertexShader());
+    glDeleteShader(Shader::fragmentShader());
+}
+
+unsigned int Shader::createShader(std::string &shaderCode, GLenum type) {
+    const char *codePtr = shaderCode.c_str();
+
+    unsigned int shaderID{glCreateShader(type)};
+
+    glShaderSource(shaderID, 1, &codePtr, NULL);
+    glCompileShader(shaderID);
+
+    Shader::shaderCompileSuccess(shaderID, type);
+
+    return shaderID;
+}
+
+unsigned int Shader::createProgram() {
+    unsigned int programID{glCreateProgram()};
+
+    glAttachShader(programID, Shader::vertexShader());
+    glAttachShader(programID, Shader::fragmentShader());
+
+    glLinkProgram(programID);
+
+    Shader::shaderLinkSuccess(programID);
+
+    return programID;
+}
+
+void Shader::setBool(const std::string &name, bool value) const {
+    glUniform1i(glGetUniformLocation(Shader::shaderProgram(), name.c_str()),
+                (int)value);
+}
+
+void Shader::setInt(const std::string &name, int value) const {
+    glUniform1i(glGetUniformLocation(Shader::shaderProgram(), name.c_str()),
+                value);
+}
+
+void Shader::setFloat(const std::string &name, float value) const {
+    glUniform1f(glGetUniformLocation(Shader::shaderProgram(), name.c_str()),
+                value);
+}
+
+std::string Shader::fileToString(const char *path) {
+    std::string fileAsString{};
+    std::ifstream file{};
+
+    // ensure ifstream objects can throw exceptions:
+    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+    try {
+        // open files
+        file.open(path);
+
+        // read file's buffer contents into stream
+        std::stringstream stream{};
+        stream << file.rdbuf();
+
+        // close file handler
+        file.close();
+
+        // convert stream into string
+        fileAsString = stream.str();
+    } catch (std::ifstream::failure e) {
+        std::cout << "ERROR:: " << path << " ::NOT_SUCCESFULLY_READ"
+                  << std::endl;
+    }
+
+    return fileAsString;
+}
+
+void Shader::shaderCompileSuccess(unsigned int &shader, GLenum type) {
     int success;
     char infoLog[512];
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
@@ -15,7 +98,7 @@ void Shader::shaderCompileSuccess(const unsigned int &shader,
     }
 }
 
-void Shader::shaderLinkSuccess(const unsigned int &shaderProgram) {
+void Shader::shaderLinkSuccess(unsigned int &shaderProgram) {
     int success;
     char infoLog[512];
 

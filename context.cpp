@@ -28,7 +28,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action,
     }
 }
 
-GLFWwindow createWindow() {
+GLFWwindow *createWindow() {
     // GLFW initialisation and configuration
     // -------------------------------------
     glfwInit();
