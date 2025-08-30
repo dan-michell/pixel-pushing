@@ -18,7 +18,8 @@ void processInput(GLFWwindow *window) {
         glfwSetWindowShouldClose(window, true);
 }
 
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+void key_callback(GLFWwindow *window, int key, int scancode, int action,
+                  int mods) {
     if (key == GLFW_KEY_W && action == GLFW_PRESS) {
         WIREFRAME = !WIREFRAME;
 
@@ -27,7 +28,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     }
 }
 
-GLFWwindow *createWindow() {
+GLFWwindow createWindow() {
     // GLFW initialisation and configuration
     // -------------------------------------
     glfwInit();
@@ -52,9 +53,10 @@ GLFWwindow *createWindow() {
 
     // Load GLFW function pointers
     // ---------------------------
-    // GLAD manages function pointers for OpenGL. Initalise this before calling any OpenGl function
-    // These function pointers are OS specific, glfwGetProcAddress defines the correct function
-    // based on which OS we're compiling for
+    // GLAD manages function pointers for OpenGL. Initalise this before calling
+    // any OpenGl function These function pointers are OS specific,
+    // glfwGetProcAddress defines the correct function based on which OS we're
+    // compiling for
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
     }
