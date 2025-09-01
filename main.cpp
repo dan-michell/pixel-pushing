@@ -1,8 +1,7 @@
-#include "context.h"
-#include "shaders/shader.h"
+#include "window.h"
+#include "shader/shader.h"
 
-#include <cmath>
-#include <iostream>
+#include "stb/stb_image.h"
 
 unsigned int getTriangleVertexArray(std::array<float, 9> &vertices) {
     // Generate VBO ID -> Bind buffer to ID -> Add buffer vertex data -> Create
@@ -51,7 +50,16 @@ unsigned int getTriangleVertexArray(std::array<float, 9> &vertices) {
     return VAO;
 }
 
-unsigned int getTraiangleWithColorVertexArray(std::array<float, 18> &vertices) {
+unsigned int getTraiangleWithColorVertexArray() {
+    // Setup vertex data and attributes
+    // --------------------------------
+    std::array<float, 18> verticesWithColor{
+        // positions         // colors
+        0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom right
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom left
+        0.0f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f  // top
+    };
+
     unsigned int VBO, VAO;
 
     glGenVertexArrays(1, &VAO);
@@ -60,7 +68,8 @@ unsigned int getTraiangleWithColorVertexArray(std::array<float, 18> &vertices) {
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verticesWithColor), &verticesWithColor,
+                 GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
                           (void *)0);
@@ -77,26 +86,16 @@ unsigned int getTraiangleWithColorVertexArray(std::array<float, 18> &vertices) {
 }
 
 unsigned int getRectangleVertexArray() {
-    // float vertices[]{
-    //     // first triangle
-    //     0.5f, 0.5f, 0.0f,  // top right
-    //     0.5f, -0.5f, 0.0f, // bottom right
-    //     -0.5f, 0.5f, 0.0f, // top left
-    //     // second triangle
-    //     0.5f, -0.5f, 0.0f,  // bottom right
-    //     -0.5f, -0.5f, 0.0f, // bottom left
-    //     -0.5f, 0.5f, 0.0f   // top left
-    // };
-
-    // We can use an (E)lement (B)uffer (O)bject to store only the unique
-    // vertices instead, and specify the order with indices
-    float vertices[] = {
-        0.5f,  0.5f,  0.0f, // top right
-        0.5f,  -0.5f, 0.0f, // bottom right
-        -0.5f, -0.5f, 0.0f, // bottom left
-        -0.5f, 0.5f,  0.0f  // top left
+    // Positions | Colours | Texture coords
+    std::array<float, 32> vertices = {
+        // 0 -> 2 positions, 3 -> 5 colours, 6 -> 7 texture coords (s,t)
+        0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top right
+        0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // bottom right
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom left
+        -0.5f, 0.5f,  0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f  // top left
     };
-    unsigned int indices[] = {
+
+    std::array<unsigned int, 6> indices = {
         // note that we start from 0!
         0, 1, 3, // first triangle
         1, 2, 3  // second triangle
@@ -109,37 +108,84 @@ unsigned int getRectangleVertexArray() {
     unsigned int VBO;
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
 
     unsigned int EBO;
     glGenBuffers(1, &EBO);
     // The target is GL_ELEMENT_ARRAY_BUFFER instead of GL_ARRAY_BUFFER
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices,
                  GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
                           (void *)0);
     glEnableVertexAttribArray(0);
 
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+                          (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+                          (void *)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
     return VAO;
+}
+
+void generateTexture(unsigned char *data, int &width, int &height, GLint format,
+                     int textureSelector) {
+    unsigned int texture;
+    glGenTextures(1, &texture);
+
+    // GL_TEXTURE0 is activated by default. If we wanted to apply multiple
+    // texture units we would need to activate them manually here
+    glActiveTexture((GL_TEXTURE0 + textureSelector));
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    // Generate texture image on currently bound texture object 'texture'
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format,
+                 GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
 }
 
 int main() {
     GLFWwindow *window = createWindow();
 
-    // Setup vertex data and attributes
-    // --------------------------------
-    std::array<float, 18> verticesWithColor{
-        // positions         // colors
-        0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom right
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom left
-        0.0f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f  // top
-    };
+    // unsigned int VAO = getTraiangleWithColorVertexArray();
+    unsigned int VAO = getRectangleVertexArray();
 
-    unsigned int VAO = getTraiangleWithColorVertexArray(verticesWithColor);
+    Shader shader{"./shader/source/base.vert", "./shader/source/base.frag"};
 
-    Shader shader{"./shaders/source/base.vert", "./shaders/source/base.frag"};
+    // Texture
+    int width, height, nrChannels;
+
+    unsigned char *container =
+        stbi_load("./assets/container.jpg", &width, &height, &nrChannels, 0);
+
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char *face =
+        stbi_load("./assets/awesomeface.png", &width, &height, &nrChannels, 0);
+
+    if (container && face) {
+        generateTexture(face, width, height, GL_RGBA, 1);
+        generateTexture(container, width, height, GL_RGB, 0);
+
+        // Set filtering and mipmap options
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                        GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    } else {
+        std::cerr << "Error loading texture from image" << std::endl;
+    }
+
+    stbi_image_free(container);
+    stbi_image_free(face);
+
+    shader.use();
+    shader.setInt("texture2", 1);
 
     // Render loop
     while (!glfwWindowShouldClose(window)) {
@@ -148,16 +194,11 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        shader.use();
-
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        //   0 = Starting index of vertex array
-        //   3 = How many vertices we want to draw. We only want to draw 1
-        //   triangle with 3 vertices
         // Use draw elements when an EBO is involved i.e. for a rectangle
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         // glBindVertexArray(0);
 
