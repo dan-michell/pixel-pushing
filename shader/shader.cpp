@@ -58,6 +58,15 @@ void Shader::setFloat(const std::string &name, float value) const {
                 value);
 }
 
+GLfloat Shader::getFloat(const std::string &name) {
+    GLfloat val{};
+
+    GLint location{glGetUniformLocation(this->shaderProgram(), name.c_str())};
+    glGetUniformfv(this->shaderProgram(), location, &val);
+
+    return val;
+}
+
 std::string Shader::fileToString(const char *path) {
     std::string fileAsString{};
     std::ifstream file{};

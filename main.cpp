@@ -132,8 +132,9 @@ unsigned int getRectangleVertexArray() {
     return VAO;
 }
 
-void generateTexture(unsigned char *data, int &width, int &height, GLint format,
-                     int textureSelector) {
+void generateTexture(unsigned char *data, int &width, int &height,
+                     int textureSelector, GLint format, GLint clamping,
+                     GLint filtering) {
     unsigned int texture;
     glGenTextures(1, &texture);
 
@@ -146,6 +147,14 @@ void generateTexture(unsigned char *data, int &width, int &height, GLint format,
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format,
                  GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
+
+    // Clamping
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamping);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamping);
+
+    // Filtering
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filtering);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering);
 }
 
 int main() {
@@ -167,16 +176,11 @@ int main() {
         stbi_load("./assets/awesomeface.png", &width, &height, &nrChannels, 0);
 
     if (container && face) {
-        generateTexture(face, width, height, GL_RGBA, 1);
-        generateTexture(container, width, height, GL_RGB, 0);
+        generateTexture(container, width, height, 0, GL_RGB, GL_CLAMP_TO_EDGE,
+                        GL_NEAREST);
 
-        // Set filtering and mipmap options
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                        GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
+        generateTexture(face, width, height, 1, GL_RGBA, GL_CLAMP_TO_EDGE,
+                        GL_NEAREST);
     } else {
         std::cerr << "Error loading texture from image" << std::endl;
     }
@@ -189,8 +193,6 @@ int main() {
 
     // Render loop
     while (!glfwWindowShouldClose(window)) {
-        processInput(window);
-
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -200,6 +202,7 @@ int main() {
         // Use draw elements when an EBO is involved i.e. for a rectangle
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+        processShaderInput(window, shader);
         // glBindVertexArray(0);
 
         glfwSwapBuffers(window);

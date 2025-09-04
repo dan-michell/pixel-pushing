@@ -1,25 +1,30 @@
 #include "window.h"
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
 #include <iostream>
 
-bool WIREFRAME{false};
+static bool WIREFRAME{false};
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
     // Called by GLFW whenever the window is manually resized
     glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow *window) {
-    // Checks for esc key press, closes window if pressed
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
+void processShaderInput(GLFWwindow *window, Shader &shader) {
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        shader.setFloat("mixPercent", shader.getFloat("mixPercent") + 0.01);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        shader.setFloat("mixPercent", shader.getFloat("mixPercent") - 0.01);
+    }
 }
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action,
                   int mods) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, true);
+    }
+
     if (key == GLFW_KEY_W && action == GLFW_PRESS) {
         WIREFRAME = !WIREFRAME;
 
@@ -48,15 +53,14 @@ GLFWwindow *createWindow() {
 
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
     glfwSetKeyCallback(window, key_callback);
 
     // Load GLFW function pointers
     // ---------------------------
-    // GLAD manages function pointers for OpenGL. Initalise this before calling
-    // any OpenGl function These function pointers are OS specific,
-    // glfwGetProcAddress defines the correct function based on which OS we're
-    // compiling for
+    // GLAD manages function pointers for OpenGL. Initalise this before
+    // calling any OpenGl function These function pointers are OS specific,
+    // glfwGetProcAddress defines the correct function based on which OS
+    // we're compiling for
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
     }
