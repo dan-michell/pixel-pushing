@@ -75,13 +75,17 @@ std::string Shader::fileToString(const char *path) {
     file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
     try {
+        std::cout << std::filesystem::current_path().string() << std::endl;
+        std::cout << "RUN1" << '\n';
         // open files
         file.open(path);
 
+        std::cout << "RUN2" << '\n';
         // read file's buffer contents into stream
         std::stringstream stream{};
         stream << file.rdbuf();
 
+        std::cout << "RUN3" << '\n';
         // close file handler
         file.close();
 

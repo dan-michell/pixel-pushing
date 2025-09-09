@@ -9,16 +9,6 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-void processShaderInput(GLFWwindow *window, Shader &shader) {
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-        shader.setFloat("mixPercent", shader.getFloat("mixPercent") + 0.01);
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-        shader.setFloat("mixPercent", shader.getFloat("mixPercent") - 0.01);
-    }
-}
-
 void key_callback(GLFWwindow *window, int key, int scancode, int action,
                   int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {

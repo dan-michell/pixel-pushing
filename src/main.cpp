@@ -1,7 +1,82 @@
 #include "window.h"
-#include "shader/shader.h"
 
-#include "stb/stb_image.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
+static float mixPercent{0.5f};
+
+unsigned int getTriangleVertexArray(std::array<float, 9> &vertices);
+unsigned int getTraiangleWithColorVertexArray();
+unsigned int getRectangleVertexArray();
+void generateTexture(unsigned char *data, int &width, int &height,
+                     int textureSelector, GLint format, GLint clamping,
+                     GLint filtering);
+void processShaderInput(GLFWwindow *window);
+
+int main() {
+    GLFWwindow *window = createWindow();
+
+    // unsigned int VAO = getTraiangleWithColorVertexArray();
+    unsigned int VAO = getRectangleVertexArray();
+
+    const char *vertexShaderPath = "./src/shader/base.vert";
+    const char *fragmentShaderPath = "./src/shader/base.frag";
+
+    Shader shader{vertexShaderPath, fragmentShaderPath};
+
+    // Texture
+    int width, height, nrChannels;
+
+    unsigned char *container =
+        stbi_load("./assets/container.jpg", &width, &height, &nrChannels, 0);
+
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char *face =
+        stbi_load("./assets/awesomeface.png", &width, &height, &nrChannels, 0);
+
+    if (container && face) {
+        generateTexture(container, width, height, 0, GL_RGB, GL_CLAMP_TO_EDGE,
+                        GL_NEAREST);
+
+        generateTexture(face, width, height, 1, GL_RGBA, GL_CLAMP_TO_EDGE,
+                        GL_NEAREST);
+    } else {
+        std::cerr << "Error loading texture from image" << std::endl;
+    }
+
+    stbi_image_free(container);
+    stbi_image_free(face);
+
+    shader.use();
+    shader.setInt("texture2", 1);
+
+    // Render loop
+    while (!glfwWindowShouldClose(window)) {
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Use draw elements when an EBO is involved i.e. for a rectangle
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        // Process shader related inputs
+        processShaderInput(window);
+        shader.setFloat("mixPercent", mixPercent);
+
+        // GLFW: swap buffers and poll IO events (keys pressed/released, mouse
+        // moved etc.)
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    // De-allocate all resources once they've outlived their purpose:
+    // --------------------------------------------------------------
+    glDeleteVertexArrays(1, &VAO);
+
+    glfwTerminate();
+
+    return 0;
+}
 
 unsigned int getTriangleVertexArray(std::array<float, 9> &vertices) {
     // Generate VBO ID -> Bind buffer to ID -> Add buffer vertex data -> Create
@@ -157,66 +232,12 @@ void generateTexture(unsigned char *data, int &width, int &height,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering);
 }
 
-int main() {
-    GLFWwindow *window = createWindow();
-
-    // unsigned int VAO = getTraiangleWithColorVertexArray();
-    unsigned int VAO = getRectangleVertexArray();
-
-    Shader shader{"./shader/source/base.vert", "./shader/source/base.frag"};
-
-    // Texture
-    int width, height, nrChannels;
-
-    unsigned char *container =
-        stbi_load("./assets/container.jpg", &width, &height, &nrChannels, 0);
-
-    stbi_set_flip_vertically_on_load(true);
-    unsigned char *face =
-        stbi_load("./assets/awesomeface.png", &width, &height, &nrChannels, 0);
-
-    if (container && face) {
-        generateTexture(container, width, height, 0, GL_RGB, GL_CLAMP_TO_EDGE,
-                        GL_NEAREST);
-
-        generateTexture(face, width, height, 1, GL_RGBA, GL_CLAMP_TO_EDGE,
-                        GL_NEAREST);
-    } else {
-        std::cerr << "Error loading texture from image" << std::endl;
+void processShaderInput(GLFWwindow *window) {
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        mixPercent += 0.01;
     }
 
-    stbi_image_free(container);
-    stbi_image_free(face);
-
-    shader.use();
-    shader.setInt("texture2", 1);
-
-    // Render loop
-    while (!glfwWindowShouldClose(window)) {
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
-        // Use draw elements when an EBO is involved i.e. for a rectangle
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-        processShaderInput(window, shader);
-        // glBindVertexArray(0);
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        mixPercent -= 0.01;
     }
-
-    // De-allocate all resources once they've outlived their purpose:
-    // --------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
-
-    // glDeleteVertexArrays(1, &VAO2);
-    // glDeleteProgram(shaderProgramYellow);
-
-    glfwTerminate();
-
-    return 0;
 }

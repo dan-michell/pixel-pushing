@@ -7,7 +7,7 @@ in vec2 TexCoord;
 uniform sampler2D texture1;
 uniform sampler2D texture2;
 
-uniform float mixPercent = 0.5;
+uniform float mixPercent;
 
 void main()
 {
