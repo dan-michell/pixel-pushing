@@ -1,4 +1,5 @@
-#include "window.h"
+#include "shader/shader.hpp"
+#include "window.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -57,7 +58,7 @@ int main() {
 
         // Use draw elements when an EBO is involved i.e. for a rectangle
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
         // Process shader related inputs
         processShaderInput(window);
@@ -112,8 +113,7 @@ unsigned int getTriangleVertexArray(std::array<float, 9> &vertices) {
     // In our array 'vertices' the new vertex attribute begins 3 * sizeof(float)
     // away from the start of the first. (void *)0 = Offset to where the vertex
     // position data starts in the array. Ours begins immediately.
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
-                          (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
     // Enable vertex attribute. 0 is the position of our vertex attribute in the
     // VBO
     glEnableVertexAttribArray(0);
@@ -146,8 +146,7 @@ unsigned int getTraiangleWithColorVertexArray() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(verticesWithColor), &verticesWithColor,
                  GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
-                          (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), nullptr);
     glEnableVertexAttribArray(0);
 
     // Enable pointer to color vertex attributes. Stride is 6 * sizeof(float) as
@@ -192,8 +191,7 @@ unsigned int getRectangleVertexArray() {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices,
                  GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-                          (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), nullptr);
     glEnableVertexAttribArray(0);
 
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),

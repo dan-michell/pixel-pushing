@@ -1,15 +1,13 @@
-#ifndef SHADER_H
-#define SHADER_H
+#ifndef SHADER_HPP
+#define SHADER_HPP
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include <iostream>
+#include "../util.hpp"
 
 class Shader {
   public:
     Shader(const char *vertexPath, const char *fragmentPath);
 
+    // const at end of member function ensures that no data members are modified
     const unsigned int &shaderProgram() const { return m_shaderProgram; };
 
     void setBool(const std::string &name, bool value) const;
@@ -17,9 +15,9 @@ class Shader {
     void setInt(const std::string &name, int value) const;
 
     void setFloat(const std::string &name, float value) const;
-    GLfloat getFloat(const std::string &name);
+    GLfloat getFloat(const std::string &name) const;
 
-    void use() { glUseProgram(shaderProgram()); };
+    void use() const { glUseProgram(shaderProgram()); };
 
   private:
     unsigned int m_vertexShader;
@@ -27,8 +25,8 @@ class Shader {
     unsigned int m_shaderProgram;
 
     // Getters
-    const unsigned int vertexShader() { return m_vertexShader; };
-    const unsigned int fragmentShader() { return m_fragmentShader; };
+    unsigned int vertexShader() const { return m_vertexShader; };
+    unsigned int fragmentShader() const { return m_fragmentShader; };
 
     // Setters
     void setShaderProgram() { m_shaderProgram = createProgram(); };
@@ -40,13 +38,12 @@ class Shader {
     };
 
     // Shader
-    unsigned int createShader(std::string &code, GLenum type);
+    static unsigned int createShader(std::string &code, GLenum type);
     unsigned int createProgram();
 
     // Helper
-    std::string fileToString(const char *path);
-    void shaderCompileSuccess(unsigned int &shader, GLenum type);
-    void shaderLinkSuccess(unsigned int &shaderProgram);
+    static void shaderCompileSuccess(unsigned int &shader, GLenum type);
+    static void shaderLinkSuccess(unsigned int &shaderProgram);
 };
 
 #endif

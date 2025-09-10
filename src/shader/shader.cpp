@@ -1,12 +1,8 @@
-#include "shader.h"
-
-#include <iostream>
-#include <fstream>
-#include <sstream>
+#include "shader.hpp"
 
 Shader::Shader(const char *vertexPath, const char *fragmentPath) {
-    std::string vertexCode{this->fileToString(vertexPath)};
-    std::string fragmentCode{this->fileToString(fragmentPath)};
+    std::string vertexCode{fileToString(vertexPath)};
+    std::string fragmentCode{fileToString(fragmentPath)};
 
     this->setVertexShader(vertexCode);
     this->setFragmentShader(fragmentCode);
@@ -22,10 +18,10 @@ unsigned int Shader::createShader(std::string &shaderCode, GLenum type) {
 
     unsigned int shaderID{glCreateShader(type)};
 
-    glShaderSource(shaderID, 1, &codePtr, NULL);
+    glShaderSource(shaderID, 1, &codePtr, nullptr);
     glCompileShader(shaderID);
 
-    this->shaderCompileSuccess(shaderID, type);
+    Shader::shaderCompileSuccess(shaderID, type);
 
     return shaderID;
 }
@@ -38,7 +34,7 @@ unsigned int Shader::createProgram() {
 
     glLinkProgram(programID);
 
-    this->shaderLinkSuccess(programID);
+    Shader::shaderLinkSuccess(programID);
 
     return programID;
 }
@@ -58,7 +54,7 @@ void Shader::setFloat(const std::string &name, float value) const {
                 value);
 }
 
-GLfloat Shader::getFloat(const std::string &name) {
+GLfloat Shader::getFloat(const std::string &name) const {
     GLfloat val{};
 
     GLint location{glGetUniformLocation(this->shaderProgram(), name.c_str())};
@@ -67,45 +63,13 @@ GLfloat Shader::getFloat(const std::string &name) {
     return val;
 }
 
-std::string Shader::fileToString(const char *path) {
-    std::string fileAsString{};
-    std::ifstream file{};
-
-    // ensure ifstream objects can throw exceptions:
-    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-
-    try {
-        std::cout << std::filesystem::current_path().string() << std::endl;
-        std::cout << "RUN1" << '\n';
-        // open files
-        file.open(path);
-
-        std::cout << "RUN2" << '\n';
-        // read file's buffer contents into stream
-        std::stringstream stream{};
-        stream << file.rdbuf();
-
-        std::cout << "RUN3" << '\n';
-        // close file handler
-        file.close();
-
-        // convert stream into string
-        fileAsString = stream.str();
-    } catch (std::ifstream::failure e) {
-        std::cout << "ERROR:: " << path << " ::NOT_SUCCESFULLY_READ"
-                  << std::endl;
-    }
-
-    return fileAsString;
-}
-
 void Shader::shaderCompileSuccess(unsigned int &shader, GLenum type) {
     int success;
     char infoLog[512];
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 
     if (!success) {
-        glGetShaderInfoLog(shader, 512, NULL, infoLog);
+        glGetShaderInfoLog(shader, 512, nullptr, infoLog);
         std::cout << "ERROR::SHADER::" << type << "::COMPILATION_FAILED\n"
                   << infoLog << std::endl;
     }
@@ -118,7 +82,7 @@ void Shader::shaderLinkSuccess(unsigned int &shaderProgram) {
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
 
     if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
         std::cout << "ERROR::SHADER_PROGRAM::LINK_FAILED\n"
                   << infoLog << std::endl;
     }

@@ -1,4 +1,4 @@
-#include "window.h"
+#include "window.hpp"
 
 #include <iostream>
 
@@ -34,9 +34,9 @@ GLFWwindow *createWindow() {
 
     // GLFW window creation
     // --------------------
-    GLFWwindow *window{glfwCreateWindow(800, 600, "Shaders", NULL, NULL)};
+    GLFWwindow *window{glfwCreateWindow(800, 600, "Shaders", nullptr, nullptr)};
 
-    if (window == NULL) {
+    if (window == nullptr) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
     }
