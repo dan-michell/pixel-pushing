@@ -3,3 +3,4 @@
 .clangd
 build/
 .idea/
+.clang-tidy
