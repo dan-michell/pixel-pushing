@@ -3,6 +3,7 @@
 #include <iostream>
 
 static bool WIREFRAME{false};
+constexpr int MAX_FPS{60};
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
     // Called by GLFW whenever the window is manually resized

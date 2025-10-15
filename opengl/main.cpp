@@ -6,6 +6,7 @@
 
 static float mixPercent{0.5f};
 
+void unbind();
 unsigned int getTriangleVertexArray(std::array<float, 9> &vertices);
 unsigned int getTraiangleWithColorVertexArray();
 unsigned int getRectangleVertexArray();
@@ -19,6 +20,7 @@ int main() {
 
     // unsigned int VAO = getTraiangleWithColorVertexArray();
     unsigned int VAO = getRectangleVertexArray();
+    unbind();
 
     const char *vertexShaderPath = "./src/shader/base.vert";
     const char *fragmentShaderPath = "./src/shader/base.frag";
@@ -77,6 +79,11 @@ int main() {
     glfwTerminate();
 
     return 0;
+}
+
+void unbind() {
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 }
 
 unsigned int getTriangleVertexArray(std::array<float, 9> &vertices) {
